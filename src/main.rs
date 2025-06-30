@@ -2,6 +2,7 @@ use hex;
 use rand;
 use std::thread::{self, JoinHandle};
 use std::time::Instant;
+use std::{env, u128, vec};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Card {
@@ -13,15 +14,40 @@ pub struct Card {
 fn main() {
     //threading
     let total_cores: usize = thread::available_parallelism().unwrap().into();
-    let total_cores = total_cores as u128;
+    let mut total_cores = total_cores as u128;
+    let mut amtarg: Vec<&String> = vec![];
+
+    //init
+    let mut active = true;
+    let mut res_only = false;
+
+    //arg wrapping
+    let args: Vec<String> = env::args().collect();
+
+    if (args.contains(&"res-only".to_string())) {
+        res_only = true;
+    }
+
+    if (args.contains(&"no-mt".to_string())) {
+        if (!res_only) {
+            println!("Disabling Multi-threading.");
+        }
+        total_cores = 1;
+    }
+
+    if (args.len() > 1) {
+        amtarg = args.iter().filter(|x| x.parse::<u128>().is_ok()).collect();
+    }
 
     loop {
-        //init
+        if !active {
+            break;
+        };
+        //init loop resets
         let mut input = String::new();
         let mut valid = false;
-        let mut active = true;
 
-        while (!valid) {
+        while (!valid && amtarg.len() < 1) {
             println!("How many decks to make? (empty for exit)");
             std::io::stdin().read_line(&mut input).unwrap();
             input = input.chars().filter(|x| x.is_numeric()).collect();
@@ -34,23 +60,28 @@ fn main() {
             }
         }
 
-        if !active {
-            break;
-        };
+        if (amtarg.len() >= 1) {
+            input = amtarg[0].to_owned();
+            active = false;
+        }
 
         let amt = input.parse::<u128>().unwrap();
 
         if (amt % total_cores as u128 > 0) {
-            println!(
-                "Rounding to {:?} for clean work division between cores.",
-                (amt / total_cores) * total_cores
-            )
+            if (!res_only) {
+                println!(
+                    "Rounding to {:?} for clean work division between cores.",
+                    (amt / total_cores) * total_cores
+                )
+            }
         }
 
-        println!(
-            "Creating and Hashing {:?} Decks with {:?} threads.",
-            amt, total_cores
-        );
+        if (!res_only) {
+            println!(
+                "Creating and Hashing {:?} Decks with {:?} threads.",
+                amt, total_cores
+            );
+        }
 
         let amt_per_thread = amt / total_cores;
 
@@ -65,7 +96,7 @@ fn main() {
                 for _ in 0..amt_per_thread {
                     shuffle_deck(&mut deck);
                     bytebuffer.fill(0);
-                    make_deck_hash(deck, &mut bytebuffer);
+                    let _ = make_deck_hash(deck, &mut bytebuffer);
                     //println!("{:?}", make_deck_hash(deck, &mut bytebuffer));
                 }
                 return;
@@ -77,11 +108,15 @@ fn main() {
         }
 
         let endtime = Instant::now();
-        println!(
-            "Created an Hashed {:?} Decks in {:.2} seconds.",
-            amt_per_thread * total_cores,
-            endtime.duration_since(starttime).as_secs_f32()
-        );
+        if (!res_only) {
+            println!(
+                "Created an Hashed {:?} Decks in {:.2} seconds.",
+                amt_per_thread * total_cores,
+                endtime.duration_since(starttime).as_secs_f32()
+            );
+        } else {
+            println!("{:.2}s", endtime.duration_since(starttime).as_secs_f32());
+        }
     }
 }
 
