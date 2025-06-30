@@ -78,7 +78,7 @@ fn main() {
 
         if (!res_only) {
             println!(
-                "Creating and Hashing {:?} Decks with {:?} threads.",
+                "Creating deck per thread, Shuffling and Hashing {:?} total times with {:?} threads.",
                 amt, total_cores
             );
         }
@@ -110,12 +110,16 @@ fn main() {
         let endtime = Instant::now();
         if (!res_only) {
             println!(
-                "Created an Hashed {:?} Decks in {:.2} seconds.",
+                "Shuffleded an Hashed {:?} times in {:.2} seconds.",
                 amt_per_thread * total_cores,
                 endtime.duration_since(starttime).as_secs_f32()
             );
         } else {
-            println!("{:.2}s", endtime.duration_since(starttime).as_secs_f32());
+            println!(
+                "{:?};{:.2}s",
+                amt_per_thread * total_cores,
+                endtime.duration_since(starttime).as_secs_f32()
+            );
         }
     }
 }
