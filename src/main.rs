@@ -13,8 +13,7 @@ pub struct Card {
 #[allow(unused_parens)]
 fn main() {
     //threading
-    let total_cores: usize = thread::available_parallelism().unwrap().into();
-    let mut total_cores = total_cores as u128;
+    let mut total_cores = thread::available_parallelism().unwrap().get() as u128;
     let mut amtarg: Vec<&String> = vec![];
 
     //init
@@ -54,7 +53,7 @@ fn main() {
 
             valid = input.parse::<u32>().is_ok();
 
-            if (input == "") {
+            if (input.is_empty()) {
                 active = false;
                 valid = true;
             }
@@ -110,7 +109,7 @@ fn main() {
         let endtime = Instant::now();
         if (!res_only) {
             println!(
-                "Shuffleded an Hashed {:?} times in {:.2} seconds.",
+                "Shuffled an Hashed {:?} times in {:.2} seconds.",
                 amt_per_thread * total_cores,
                 endtime.duration_since(starttime).as_secs_f32()
             );
