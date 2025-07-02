@@ -1,8 +1,11 @@
 use hex;
 use rand;
+use std::fs::OpenOptions;
+use std::io::{Read, Write};
+use std::process::exit;
 use std::thread::{self, JoinHandle};
 use std::time::Instant;
-use std::{env, u128, vec};
+use std::{env, fs::File, path::Path, u128, vec};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Card {
@@ -19,6 +22,7 @@ fn main() {
     //init
     let mut active = true;
     let mut res_only = false;
+    let mut log = false;
 
     //arg wrapping
     let args: Vec<String> = env::args().collect();
@@ -32,6 +36,10 @@ fn main() {
             println!("Disabling Multi-threading.");
         }
         total_cores = 1;
+    }
+
+    if (args.contains(&"log".to_string())) {
+        log = true;
     }
 
     if (args.len() > 1) {
@@ -64,7 +72,13 @@ fn main() {
             active = false;
         }
 
-        let amt = input.parse::<u128>().unwrap();
+        let amt: u128 = match input.parse::<u128>() {
+            Err(reason) => {
+                println!("Could not unwrap input amount: {:?}", reason);
+                exit(0);
+            }
+            Ok(result) => result,
+        };
 
         if (amt % total_cores as u128 > 0) {
             if (!res_only) {
@@ -119,6 +133,26 @@ fn main() {
                 amt_per_thread * total_cores,
                 endtime.duration_since(starttime).as_secs_f32()
             );
+        }
+
+        if (log) {
+            let path = Path::new("output.log");
+            let mut file = match OpenOptions::new()
+                .create(true)
+                .write(true)
+                .append(true)
+                .open(path)
+            {
+                Err(_) => File::create(path).unwrap(),
+                Ok(file) => file,
+            };
+
+            let entry = format!(
+                "{:?};{:.2}s\n",
+                amt_per_thread * total_cores,
+                endtime.duration_since(starttime).as_secs_f32()
+            );
+            file.write_all(entry.as_bytes()).unwrap_or_default();
         }
     }
 }
