@@ -1,7 +1,7 @@
 use hex;
 use rand;
 use std::fs::OpenOptions;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::process::exit;
 use std::thread::{self, JoinHandle};
 use std::time::Instant;
